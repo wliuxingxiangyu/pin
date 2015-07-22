@@ -75,53 +75,22 @@ static INT32 Usage()
     return -1;
 }
 
+static int non_memory_ins = 0;
+static int total_ins = 0;
+static int recycle_ins = 0;
 
-static VOID EmitMem(VOID * ea, INT32 size)
-{
-    if (!KnobValues)
-        return;
-    
-    switch(size)
-    {
-      case 0:
-        TraceFile << setw(1);
-        break;
-        
-      case 1:
-        TraceFile << static_cast<UINT32>(*static_cast<UINT8*>(ea));
-        break;
-        
-      case 2:
-        TraceFile << *static_cast<UINT16*>(ea);
-        break;
-        
-      case 4:
-        TraceFile << *static_cast<UINT32*>(ea);
-        break;
-        
-      case 8:
-        TraceFile << *static_cast<UINT64*>(ea);
-        break;
-        
-      default:
-        TraceFile.unsetf(ios::showbase);
-        TraceFile << setw(1) << "0x";
-        for (INT32 i = 0; i < size; i++)
-        {
-            TraceFile << static_cast<UINT32>(static_cast<UINT8*>(ea)[i]);
-        }
-        TraceFile.setf(ios::showbase);
-        break;
-    }
+static VOID icount() {
+  total_ins++;
+  non_memory_ins++;
 }
 
 static VOID RecordMem(VOID * ip, CHAR r, VOID * addr, INT32 size, BOOL isPrefetch)
 {
-    TraceFile << ip << ": " << r << " " << setw(2+2*sizeof(ADDRINT)) << addr << " "
-              << dec << setw(2) << size << " "
-              << hex << setw(2+2*sizeof(ADDRINT));
-    if (!isPrefetch)
-        EmitMem(addr, size);
+    TraceFile << non_memory_ins << " " << setw(2+2*sizeof(ADDRINT)) << addr << " " << r;
+//     if (!isPrefetch)
+//         EmitMem(addr, size);
+    recycle_ins += non_memory_ins;
+    non_memory_ins = 0;
     TraceFile << endl;
 }
 
@@ -153,7 +122,6 @@ VOID Instruction(INS ins, VOID *v)
             IARG_INST_PTR,
             IARG_UINT32, 'R',
             IARG_MEMORYREAD_EA,
-            IARG_MEMORYREAD_SIZE,
             IARG_BOOL, INS_IsPrefetch(ins),
             IARG_END);
     }
@@ -194,15 +162,16 @@ VOID Instruction(INS ins, VOID *v)
                 IARG_INST_PTR,
                 IARG_END);
         }
-        
     }
+
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)icount, IARG_END);
 }
 
 /* ===================================================================== */
 
 VOID Fini(INT32 code, VOID *v)
 {
-    TraceFile << "#eof" << endl;
+    TraceFile << "total_ins: " << total_ins << "recycle_ins" << recycle_ins;
     
     TraceFile.close();
 }
