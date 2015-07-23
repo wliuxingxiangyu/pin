@@ -171,7 +171,7 @@ VOID Instruction(INS ins, VOID *v)
 
 VOID Fini(INT32 code, VOID *v)
 {
-    TraceFile << "total_ins: " << total_ins << "recycle_ins" << recycle_ins;
+//     TraceFile << "total_ins: " << total_ins << "recycle_ins" << recycle_ins;
     
     TraceFile.close();
 }
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
     }
     
     TraceFile.open(KnobOutputFile.Value().c_str());
-    TraceFile.write(trace_header.c_str(),trace_header.size());
+//     TraceFile.write(trace_header.c_str(),trace_header.size());
     TraceFile.setf(ios::showbase);
     
     INS_AddInstrumentFunction(Instruction, 0);
